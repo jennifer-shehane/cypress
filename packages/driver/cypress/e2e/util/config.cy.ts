@@ -3,8 +3,7 @@ import { getMochaOverrideLevel, validateConfig } from '../../../src/util/config'
 
 import type { StateFunc } from '../../../src/cypress/state'
 
-// $SetterGetter isn't generic over the state it holds, so cast it the same way
-// the driver itself does when it builds `cy.state` in src/cypress.ts
+// $SetterGetter isn't generic over the state it holds, so cast it the same way the driver does when it builds cy.state in src/cypress.ts
 const createState = (state: Record<string, any>) => {
   return $SetterGetter.create(state) as unknown as StateFunc
 }

@@ -1,8 +1,7 @@
 describe('blob-util 2.x', () => {
   const { Promise } = Cypress
 
-  // blob-util types each method against its own input, but this suite deliberately
-  // passes a string through every one of them, so look them up as plain converters
+  // blob-util types each method against its own input, but this suite deliberately passes a string through every one of them, so look them up as plain converters
   const blobUtil = Cypress.Blob as unknown as Record<string, (value: string) => Blob>
 
   const conversions: [string, string][] = [

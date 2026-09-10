@@ -1,7 +1,6 @@
 import { calculateTestStatus } from '../../../src/cypress/mocha'
 
-// the test type calculateTestStatus operates on isn't exported, so pull it off
-// the function itself rather than duplicating the shape here
+// the test type calculateTestStatus operates on isn't exported, so derive it from the function itself rather than duplicating the shape here
 type CypressTest = Parameters<typeof calculateTestStatus>[0]
 
 describe('mocha custom methods', () => {
@@ -19,8 +18,7 @@ describe('mocha custom methods', () => {
         prevAttempts,
       }
 
-      // these mocks only stand in for the few members calculateTestStatus reads,
-      // not for a whole mocha test
+      // the mock only implements the handful of members calculateTestStatus reads, not a whole mocha test
       return Cypress._.cloneDeep(mockTestContext) as unknown as CypressTest
     }
 
