@@ -1,4 +1,4 @@
-const LimitedMap = require('@packages/driver/src/util/limited_map').default
+import LimitedMap from '@packages/driver/src/util/limited_map'
 
 const _ = Cypress._
 

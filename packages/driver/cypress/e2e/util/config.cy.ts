@@ -1,10 +1,17 @@
 import $SetterGetter from '../../../src/cypress/setter_getter'
 import { getMochaOverrideLevel, validateConfig } from '../../../src/util/config'
 
+import type { StateFunc } from '../../../src/cypress/state'
+
+// $SetterGetter isn't generic over the state it holds, so cast it the same way the driver does when it builds cy.state in src/cypress.ts
+const createState = (state: Record<string, any>) => {
+  return $SetterGetter.create(state) as unknown as StateFunc
+}
+
 describe('driver/src/cypress/validate_config', () => {
   describe('getMochaOverrideLevel', () => {
     it('returns override level of undefined', () => {
-      const state = $SetterGetter.create({
+      const state = createState({
         duringUserTestExecution: true,
       })
       const overrideLevel = getMochaOverrideLevel(state)
@@ -13,7 +20,7 @@ describe('driver/src/cypress/validate_config', () => {
     })
 
     it('returns override level of test:before:run:async', () => {
-      const state = $SetterGetter.create({
+      const state = createState({
         duringUserTestExecution: false,
         test: {
           _fired: { 'runner:test:before:run': true, 'runner:test:before:run:async': true },
@@ -25,7 +32,7 @@ describe('driver/src/cypress/validate_config', () => {
     })
 
     it('returns override level of restoring', () => {
-      const state = $SetterGetter.create({
+      const state = createState({
         duringUserTestExecution: false,
         test: {
           _testConfig: { applied: 'restoring' },
@@ -37,7 +44,7 @@ describe('driver/src/cypress/validate_config', () => {
     })
 
     it('returns override level of suite', () => {
-      const state = $SetterGetter.create({
+      const state = createState({
         duringUserTestExecution: false,
         test: {
           _testConfig: { applied: 'suite' },
@@ -49,7 +56,7 @@ describe('driver/src/cypress/validate_config', () => {
     })
 
     it('returns override level of test', () => {
-      const state = $SetterGetter.create({
+      const state = createState({
         duringUserTestExecution: false,
         test: {
           _testConfig: { applied: 'test' },
@@ -61,7 +68,7 @@ describe('driver/src/cypress/validate_config', () => {
     })
 
     it('returns override level of fileLoad', () => {
-      const state = $SetterGetter.create({
+      const state = createState({
         duringUserTestExecution: false,
         test: undefined,
       })
@@ -73,7 +80,7 @@ describe('driver/src/cypress/validate_config', () => {
 
   describe('validate config', () => {
     it('does not throw for non-cypress configuration options', () => {
-      const state = $SetterGetter.create({
+      const state = createState({
         duringUserTestExecution: false,
       })
 
@@ -82,7 +89,7 @@ describe('driver/src/cypress/validate_config', () => {
 
     describe('ensures override level', () => {
       it('throws when config override level is never', () => {
-        const state = $SetterGetter.create({
+        const state = createState({
           duringUserTestExecution: true,
           specWindow: { Error },
           runnable: { type: 'suite' },
@@ -98,7 +105,7 @@ describe('driver/src/cypress/validate_config', () => {
 
       describe('when config override level is suite', () => {
         it('does not throw when runtime level is suite', () => {
-          const state = $SetterGetter.create({
+          const state = createState({
             duringUserTestExecution: false,
             test: {
               _testConfig: { applied: 'suite' },
@@ -115,7 +122,7 @@ describe('driver/src/cypress/validate_config', () => {
         })
 
         it('throws when runtime level is not suite', () => {
-          const state = $SetterGetter.create({
+          const state = createState({
             duringUserTestExecution: false,
             test: {
               _testConfig: { applied: 'test' },
@@ -134,7 +141,7 @@ describe('driver/src/cypress/validate_config', () => {
 
       describe('when config override level is suite', () => {
         it('and config override is read-only', () => {
-          const state = $SetterGetter.create({
+          const state = createState({
             duringUserTestExecution: false,
             specWindow: { Error },
           })
@@ -149,7 +156,7 @@ describe('driver/src/cypress/validate_config', () => {
 
         ;['test', 'suite'].forEach((mocha_runnable) => {
           it(`and config override level is ${mocha_runnable}`, () => {
-            const state = $SetterGetter.create({
+            const state = createState({
               duringUserTestExecution: false,
               test: {
                 _testConfig: { applied: mocha_runnable },
@@ -169,7 +176,7 @@ describe('driver/src/cypress/validate_config', () => {
     })
 
     it('skips checking override level when opted-out', () => {
-      const state = $SetterGetter.create({
+      const state = createState({
         duringUserTestExecution: true,
         specWindow: { Error },
         runnable: { type: 'test' },
@@ -183,7 +190,7 @@ describe('driver/src/cypress/validate_config', () => {
     })
 
     it('skips checking override level when restoring global configuration before next test', () => {
-      const state = $SetterGetter.create({
+      const state = createState({
         duringUserTestExecution: false,
         test: {
           _testConfig: { applied: 'restoring' },
@@ -197,7 +204,7 @@ describe('driver/src/cypress/validate_config', () => {
     })
 
     it('throws when invalid configuration value', () => {
-      const state = $SetterGetter.create({
+      const state = createState({
         duringUserTestExecution: true,
         specWindow: { Error },
         runnable: { type: 'test' },

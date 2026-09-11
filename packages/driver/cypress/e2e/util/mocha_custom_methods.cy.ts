@@ -1,9 +1,12 @@
-import { calculateTestStatus } from '../../../src/cypress/mocha.ts'
+import { calculateTestStatus } from '../../../src/cypress/mocha'
+
+// the test type calculateTestStatus operates on isn't exported, so derive it from the function itself rather than duplicating the shape here
+type CypressTest = Parameters<typeof calculateTestStatus>[0]
 
 describe('mocha custom methods', () => {
   describe('calculateTestStatus', () => {
     let totalRetries = 2
-    const createMockTest = (state = 'passed', prevAttempts = []) => {
+    const createMockTest = (state = 'passed', prevAttempts: CypressTest[] = []) => {
       const mockTestContext = {
         currentRetry () {
           return prevAttempts.length
@@ -15,7 +18,8 @@ describe('mocha custom methods', () => {
         prevAttempts,
       }
 
-      return Cypress._.cloneDeep(mockTestContext)
+      // the mock only implements the handful of members calculateTestStatus reads, not a whole mocha test
+      return Cypress._.cloneDeep(mockTestContext) as unknown as CypressTest
     }
 
     it('should never attempt to retry a test that passes on the first try, regardless of strategy', function () {
