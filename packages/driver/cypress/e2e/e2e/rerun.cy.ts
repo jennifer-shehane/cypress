@@ -4,9 +4,7 @@
 
 // store these on our outer top window
 // so they are globally preserved
-if (window.top.runCount == null) {
-  window.top.runCount = 0
-}
+const topWindow = window.top as Window & { runCount?: number }
 
 // This spec in the driver has some weird reloading that occurs. It triggers a simulation of
 // essentially reloading the page in run mode and that effectively wipes away some state that we
@@ -16,14 +14,14 @@ if (Cypress.config('browser').family === 'chromium') {
   // Copied from:
   // https://github.com/cypress-io/cypress-services/blob/825abbabaaa0a8ecf78e2ad543493a85a01a939f/packages/app-capture-protocol/src/cypress-events/track-cypress-events.ts#L17-L30
   const getCypressProtocolElement = () => {
-    let cypressProtocolElement = window.top.document.getElementById('__cypress-protocol')
+    let cypressProtocolElement = topWindow.document.getElementById('__cypress-protocol')
 
     // If element does not exist, create it
     if (!cypressProtocolElement) {
       cypressProtocolElement = document.createElement('div')
       cypressProtocolElement.id = '__cypress-protocol'
       cypressProtocolElement.style.display = 'none'
-      window.top.document.body.appendChild(cypressProtocolElement)
+      topWindow.document.body.appendChild(cypressProtocolElement)
     }
 
     return cypressProtocolElement
@@ -48,42 +46,53 @@ if (Cypress.config('browser').family === 'chromium') {
 
 const isTextTerminal = Cypress.config('isTextTerminal')
 
+// `isTextTerminal` is a runtime config value, so it isn't one of the keys the
+// public `Cypress.config()` setter accepts
+const setIsTextTerminal = (value: boolean) => {
+  (Cypress.config as any)('isTextTerminal', value)
+}
+
 describe('rerun state bugs', () => {
   // NOTE: there's probably other ways to cause a re-run
   // event more programatically (like firing it through Cypress)
   // but we get the hashchange coverage for free on this.
   it('stores viewport globally and does not hang on re-runs', () => {
     cy.viewport(500, 500).then(() => {
-      window.top.runCount++
-      if (window.top.runCount === 1) {
+      const runCount = (topWindow.runCount ?? 0) + 1
+
+      topWindow.runCount = runCount
+
+      if (runCount === 1) {
         // turn off mocha events for a second
-        Cypress.config('isTextTerminal', false)
+        setIsTextTerminal(false)
 
         // cause a rerun event to occur by triggering a hash change
-        window.top.dispatchEvent(new Event('test:trigger:rerun'))
-      } else if (window.top.runCount === 2) {
+        topWindow.dispatchEvent(new Event('test:trigger:rerun'))
+      } else if (runCount === 2) {
         // Second time, do nothing, with mocha events still disabled
       } else {
         // 3rd time around
         // let the mocha end events fire if they're supposed to
-        Cypress.config('isTextTerminal', isTextTerminal)
+        setIsTextTerminal(isTextTerminal)
       }
     })
   })
 
   it('does nothing if there is no runner', () => {
     // https://github.com/cypress-io/cypress/issues/7968
-    cy.stub(Cypress.cy, 'stop')
-    const runner = Cypress.runner
+    // `stop()` is an internal API, so it isn't on the public Cypress type
+    const internalCypress = Cypress as typeof Cypress & { stop: () => void }
+    const stopStub = cy.stub(Cypress.cy, 'stop')
+    const runner = internalCypress.runner
 
-    Cypress.runner = null
+    internalCypress.runner = null
 
-    Cypress.stop()
+    internalCypress.stop()
 
-    const stopWasCalled = Cypress.cy.stop.called
+    const stopWasCalled = stopStub.called
 
-    Cypress.runner = runner
-    Cypress.cy.stop.restore()
+    internalCypress.runner = runner
+    stopStub.restore()
 
     expect(stopWasCalled).to.be.false
   })
